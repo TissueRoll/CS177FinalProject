@@ -206,7 +206,7 @@ int main() {
 	// gl stuff
 	{
 		stbi_set_flip_vertically_on_load(true);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glfwSwapInterval(1);
@@ -304,7 +304,7 @@ int main() {
 
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, plane.size());
 		for (int i = 0; i < va.size(); i += 3) {
-			glUniform1f(v_time, glfwGetTime());
+			glUniform1f(v_time, glfwGetTime()*2);
 			GLuint currentOffset = i * sizeof(GLuint);
 			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)currentOffset);
 		}
