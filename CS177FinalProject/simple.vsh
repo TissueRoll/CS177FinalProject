@@ -66,7 +66,7 @@ vec3 calcNormal(vec3 pos)
 void main() {
 	float len = length(v_pos);
 	vec4 vc = vec4(v_pos, 1.f);
-	vec3 temp = v_pos + calcNormal(v_pos) * 0.07;
+	vec3 temp = v_pos + calcNormal(v_pos*time*0.0001) * 0.07;
 	gl_Position = mvp * vec4(temp,1.f);
-	// glPostition = mvp * vec4(v_pos, 1.f);
+	gl_Position = mvp * vec4(v_pos, 1.f);
 }

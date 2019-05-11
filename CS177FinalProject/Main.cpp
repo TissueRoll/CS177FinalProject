@@ -25,10 +25,6 @@ struct Vertex {
 	}
 };
 
-// have to make genSphere function
-// it returns a vector
-// generate an icosphere
-
 struct Icosphere {
 	// magic constants
 	// source: https://schneide.blog/2016/07/15/generating-an-icosphere-in-c/
@@ -37,7 +33,7 @@ struct Icosphere {
 	const float N = 0.f;
 	// sphere vertices
 	std::vector<Vertex> icosphere_vertices;
-	std::unordered_map<glm::vec3, int> icosphere_vertices_lookup_table;
+	std::unordered_map<glm::vec3, int, std::hash<glm::vec3>> icosphere_vertices_lookup_table;
 	// sphere indexing
 	std::vector<GLuint> icosphere_triangle_elements;
 	std::map<long long, int> cache;
@@ -126,26 +122,14 @@ struct Icosphere {
 		Vertex to_insert;
 		to_insert.position = glm::normalize(p);
 		icosphere_vertices.push_back(to_insert);
-		// icosphere_vertices_lookup_table.insert(glm::normalize(p));
+		icosphere_vertices_lookup_table.insert({ glm::normalize(p), index });
 		return index++;
 	}
 
 	int lookup(glm::vec3 p1, glm::vec3 p2) {
-		// O(n) method
-		long long i1 = -1;
-		long long i2 = -1;
-		for (int i = 0; i < icosphere_vertices.size(); i++) {
-			if (icosphere_vertices[i].position == p1) {
-				i1 = i;
-				break;
-			}
-		}
-		for (int i = 0; i < icosphere_vertices.size(); i++) {
-			if (icosphere_vertices[i].position == p2) {
-				i2 = i;
-				break;
-			}
-		}
+		// O(1), using unordered_map (hash table) - bigger space tho
+		long long i1 = icosphere_vertices_lookup_table[p1];
+		long long i2 = icosphere_vertices_lookup_table[p2];
 		long long l = (i1 < i2 ? i1 : i2);
 		long long r = (i1 < i2 ? i2 : i1);
 		long long key = (l << 32) + r;
@@ -163,18 +147,8 @@ struct Icosphere {
 
 };
 
-//std::vector<Vertex> genSphere(GLfloat scale, GLfloat recursion_level, glm::vec3 center) {
-//	
-//}
-//
-//std::vector<GLuint> genSphereIndices() {
-//
-//}
-
 //auto plane = genPlane(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(-.5, -.5, -1.f), 3);
 //auto plane = genCube(.5f, 5, glm::vec3(0.f));
-//auto plane = genSphere(.5f, 6, glm::vec3(0.f));
-//auto obj = genSphere(.5f, 6, glm::vec3(0, 3, 0));
 
 int main() {
 	// glfw: initialize and configure
@@ -206,7 +180,7 @@ int main() {
 	// gl stuff
 	{
 		stbi_set_flip_vertically_on_load(true);
-		// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glfwSwapInterval(1);
@@ -214,7 +188,7 @@ int main() {
 
 	GLuint program = loadProgram("simple.vsh", "simple.fsh");
 
-	Icosphere temp(1.f,4,glm::vec3(0,0,0));
+	Icosphere temp(1.f,1,glm::vec3(0,0,0));
 	temp.generate_icosphere();
 	auto vs = temp.icosphere_vertices;
 	auto va = temp.icosphere_triangle_elements;
@@ -304,7 +278,7 @@ int main() {
 
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, plane.size());
 		for (int i = 0; i < va.size(); i += 3) {
-			glUniform1f(v_time, glfwGetTime()*2);
+			glUniform1f(v_time, cos(glfwGetTime()/200)/2);
 			GLuint currentOffset = i * sizeof(GLuint);
 			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)currentOffset);
 		}
