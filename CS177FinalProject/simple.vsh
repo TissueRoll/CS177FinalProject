@@ -4,9 +4,15 @@
 #define PI 3.141592653589793238462643383279502
 
 layout(location = 0) in vec3 v_pos;
+layout(location = 1) in vec3 v_normal;
+layout(location = 2) in vec4 v_color;
+
+out vec3 f_normal;
+out vec4 f_color;
 
 uniform float time;
 uniform mat4 m;
+uniform mat4 mnormal;
 uniform mat4 v;
 uniform mat4 p;
 uniform mat4 mvp;
@@ -65,8 +71,10 @@ vec3 calcNormal(vec3 pos)
 
 void main() {
 	float len = length(v_pos);
-	vec4 vc = vec4(v_pos, 1.f);
-	vec3 temp = v_pos + calcNormal(v_pos*time*0.0001) * 0.07;
-	gl_Position = mvp * vec4(temp,1.f);
+	//vec4 vc = vec4(v_pos, 1.f);
+	//vec3 temp = v_pos + calcNormal(v_pos*time*0.0001) * 0.01;
+	//gl_Position = mvp * vec4(temp,1.f);
+	f_color = v_color;
+	f_normal = mat3(mnormal) * v_normal;
 	gl_Position = mvp * vec4(v_pos, 1.f);
 }

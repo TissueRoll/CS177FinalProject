@@ -9,6 +9,8 @@
 #include <time.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
 // settings
@@ -20,11 +22,24 @@ GLfloat blueAlpha = .5f;
 
 struct Vertex {
 	glm::vec3 position;
+	glm::vec3 normal;
+	glm::vec4 color;
+	Vertex() {
+		color = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);
+	}
+	void set_position(glm::vec3 p) {
+		position = p;
+	}
+	void set_normal(glm::vec3 a, glm::vec3 b) {
+		normal = glm::normalize(glm::cross(position - a, position - b));
+		//normal = glm::normalize(glm::cross(a - position, b - position));
+	}
 	bool operator==(const Vertex& other) const {
 		return position == other.position;
 	}
 };
 
+// need to adjust it based on offset of 
 struct Icosphere {
 	// magic constants
 	// source: https://schneide.blog/2016/07/15/generating-an-icosphere-in-c/
@@ -112,6 +127,9 @@ struct Icosphere {
 			temp_elems = temp_elems2;
 		}
 		for (glm::vec3 elems : temp_elems) {
+			icosphere_vertices[elems.x].set_normal(icosphere_vertices[elems.y].position, icosphere_vertices[elems.z].position);
+			icosphere_vertices[elems.y].set_normal(icosphere_vertices[elems.z].position, icosphere_vertices[elems.x].position);
+			icosphere_vertices[elems.z].set_normal(icosphere_vertices[elems.x].position, icosphere_vertices[elems.y].position);
 			icosphere_triangle_elements.push_back(elems.x);
 			icosphere_triangle_elements.push_back(elems.y);
 			icosphere_triangle_elements.push_back(elems.z);
@@ -147,6 +165,20 @@ struct Icosphere {
 
 };
 
+// globals
+// cpd https://learnopengl.com/Getting-started/Camera
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float deltaTime = 0.0f;	// Time between current frame and last frame
+float lastFrame = 0.0f; // Time of last frame
+bool firstMouse = true;
+float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+float pitch = 0.0f;
+float lastX = 800.0f / 2.0;
+float lastY = 600.0 / 2.0;
+float fov = 45.0f;
+
 //auto plane = genPlane(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(-.5, -.5, -1.f), 3);
 //auto plane = genCube(.5f, 5, glm::vec3(0.f));
 
@@ -169,6 +201,11 @@ int main() {
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	// tell GLFW to capture our mouse
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// glad: load all OpenGL function pointers
 	// ---------------------------------------
@@ -180,15 +217,16 @@ int main() {
 	// gl stuff
 	{
 		stbi_set_flip_vertically_on_load(true);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		// glEnable(GL_BLEND);
+		// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_DEPTH_TEST);
 		glfwSwapInterval(1);
 	}
 
 	GLuint program = loadProgram("simple.vsh", "simple.fsh");
 
-	Icosphere temp(1.f,1,glm::vec3(0,0,0));
+	Icosphere temp(0.1f,4,glm::vec3(0,0,0));
 	temp.generate_icosphere();
 	auto vs = temp.icosphere_vertices;
 	auto va = temp.icosphere_triangle_elements;
@@ -206,7 +244,11 @@ int main() {
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * va.size(), va.data(), GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+		glVertexAttribPointer(2, 4, GL_FLOAT, GL_TRUE, sizeof(Vertex), (void*)offsetof(Vertex, color));
 	}
 
 	/*
@@ -222,11 +264,18 @@ int main() {
 	}
 	*/
 
+	// vsh
 	auto v_time = glGetUniformLocation(program, "time");
 	auto v_m = glGetUniformLocation(program, "m");
+	auto v_mnormal = glGetUniformLocation(program, "mnormal");
 	auto v_v = glGetUniformLocation(program, "v");
 	auto v_p = glGetUniformLocation(program, "p");
 	auto v_mvp = glGetUniformLocation(program, "mvp");
+	// fsh
+	auto f_lightPos = glGetUniformLocation(program, "lightPos");
+	auto f_viewPos = glGetUniformLocation(program, "viewPos");
+	auto f_lightColor = glGetUniformLocation(program, "lightColor");
+
 
 	// render loop
 	// -----------
@@ -243,8 +292,16 @@ int main() {
 		glUseProgram(program);
 		glBindVertexArray(vao);
 
-		glm::mat4 m, v, p;
+		glm::vec3 lightPos = glm::vec3(1.f, 1.f, 1.f);
+		lightPos = glm::vec3(sin(glfwGetTime()), cos(glfwGetTime()), -sin(glfwGetTime())) * lightPos;
+		glm::vec3 lightColor = glm::vec3(1.f, 1.f, 1.f);
+		glUniform3fv(f_lightPos, 1, glm::value_ptr(lightPos));
+		glUniform3fv(f_lightColor, 1, glm::value_ptr(lightColor));
+
+
+		glm::mat4 m, mn, v, p;
 		m = glm::mat4(1);
+		mn = glm::mat4(1);
 		v = glm::mat4(1);
 		p = glm::mat4(1);
 		// ref: http://glslsandbox.com/e#53359.0
@@ -259,18 +316,28 @@ int main() {
 		
 
 		// Model matrix
+		// m = glm::scale(m, glm::vec3(0.5, 0.5, 0.5));
 		m = glm::rotate(m, glm::radians((GLfloat)glfwGetTime() * 10.f), glm::vec3(1, 1, 0));
+		
+		mn = glm::transpose(glm::inverse(m));
 		glUniformMatrix4fv(v_m, 1, GL_FALSE, glm::value_ptr(m));
+		glUniformMatrix4fv(v_mnormal, 1, GL_FALSE, glm::value_ptr(mn));
 
 		// View matrix
 		GLfloat r = 3.f;
-		GLfloat camX = sin(45.f)*r;
-		GLfloat camZ = cos(45.f)*r;
-		//v = glm::lookAt(glm::vec3(camX, 3.f, camZ), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		GLfloat camX = sin(glfwGetTime())*r;
+		GLfloat camY = sin(glfwGetTime())*r;
+		GLfloat camZ = cos(glfwGetTime())*r;
+		//v = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		// v = glm::translate(v, glm::vec3(0.0f, 0.0f, -3.f));
+		v = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		glUniformMatrix4fv(v_v, 1, GL_FALSE, glm::value_ptr(v));
+		glm::vec3 camPos = glm::vec3(camX, r, camZ);
+		glUniform3fv(f_viewPos, 1, glm::value_ptr(camPos));
 
 		// Projection matrix
-		//p = glm::perspective(90.f, (GLfloat)SCR_WIDTH / SCR_HEIGHT, .1f, 100.f);
+		p = glm::perspective(glm::radians(fov), (GLfloat)SCR_WIDTH / SCR_HEIGHT, .1f, 100.f);
+		
 		glUniformMatrix4fv(v_p, 1, GL_FALSE, glm::value_ptr(p));
 
 		glm::mat4 mvp = p * v*m;
@@ -307,12 +374,71 @@ int main() {
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window) {
+	float currentFrame = glfwGetTime();
+	deltaTime = currentFrame - lastFrame;
+	lastFrame = currentFrame;
+	float cameraSpeed = 2.5f * deltaTime; // adjust accordingly
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 		blueAlpha = blueAlpha > 0.f ? blueAlpha - .03f : 0.f;
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 		blueAlpha = blueAlpha < 1.f ? blueAlpha + .03f : 1.f;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPos += cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}
+
+// https://learnopengl.com/Getting-started/Camera
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.1f; // change this value to your liking
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	// make sure that when pitch is out of bounds, screen doesn't get flipped
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.y = sin(glm::radians(pitch));
+	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraFront = glm::normalize(front);
+}
+
+// glfw: whenever the mouse scroll wheel scrolls, this callback is called
+// ----------------------------------------------------------------------
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	if (fov >= 1.0f && fov <= 45.0f)
+		fov -= yoffset;
+	if (fov <= 1.0f)
+		fov = 1.0f;
+	if (fov >= 45.0f)
+		fov = 45.0f;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
