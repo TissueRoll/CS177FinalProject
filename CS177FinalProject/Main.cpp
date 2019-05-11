@@ -16,6 +16,7 @@ void processInput(GLFWwindow *window);
 // settings
 const unsigned int SCR_WIDTH = 600;
 const unsigned int SCR_HEIGHT = 600;
+const int NUM_OBJS = 10;
 
 GLfloat rot_angle = 1.5; // in degrees, rotation per frame
 GLfloat blueAlpha = .5f;
@@ -265,7 +266,6 @@ int main() {
 	*/
 
 	// vsh
-	auto v_time = glGetUniformLocation(program, "time");
 	auto v_m = glGetUniformLocation(program, "m");
 	auto v_mnormal = glGetUniformLocation(program, "mnormal");
 	auto v_v = glGetUniformLocation(program, "v");
@@ -273,13 +273,41 @@ int main() {
 	auto v_mvp = glGetUniformLocation(program, "mvp");
 	// fsh
 	auto f_lightPos = glGetUniformLocation(program, "lightPos");
+	auto f_lightD = glGetUniformLocation(program, "lightD");
 	auto f_viewPos = glGetUniformLocation(program, "viewPos");
 	auto f_lightColor = glGetUniformLocation(program, "lightColor");
+	auto f_constant = glGetUniformLocation(program, "constant");
+	auto f_linear = glGetUniformLocation(program, "linear");
+	auto f_quadratic = glGetUniformLocation(program, "quadratic");
+	auto f_cutOff = glGetUniformLocation(program, "cutOff");
+	auto f_outerCutOff = glGetUniformLocation(program, "outerCutOff");
 
+	GLfloat obj_scales[NUM_OBJS] = {
+		1.0f, 0.5f, 2.0f, 0.35f, 0.69f,
+		0.420f, 1.0f, 0.86f, 1.5f, 1.0f
+	};
+
+	glm::vec3 obj_loc[NUM_OBJS] = {
+		glm::vec3(0,0,0),
+		glm::vec3(3,3,3),
+		glm::vec3(9,9,9),
+		glm::vec3(-3,-3,-3),
+		glm::vec3(-9,-9,-9),
+		glm::vec3(0,3,3),
+		glm::vec3(0,9,9),
+		glm::vec3(0,-3,-3),
+		glm::vec3(0,-9,-9),
+		glm::vec3(5,-5,0)
+	};
 
 	// render loop
 	// -----------
 	while (!glfwWindowShouldClose(window)) {
+
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
 		// input
 		// -----
 		processInput(window);
@@ -292,11 +320,23 @@ int main() {
 		glUseProgram(program);
 		glBindVertexArray(vao);
 
-		glm::vec3 lightPos = glm::vec3(1.f, 1.f, 1.f);
+
+		/*glm::vec3 lightPos = glm::vec3(1.f, 1.f, 1.f);
 		lightPos = glm::vec3(sin(glfwGetTime()), cos(glfwGetTime()), -sin(glfwGetTime())) * lightPos;
+		printf("light: %f, %f, %f\n", lightPos.x, lightPos.y, lightPos.z);*/
 		glm::vec3 lightColor = glm::vec3(1.f, 1.f, 1.f);
-		glUniform3fv(f_lightPos, 1, glm::value_ptr(lightPos));
+		glUniform3fv(f_lightPos, 1, glm::value_ptr(cameraPos));
+		glUniform3fv(f_lightD, 1, glm::value_ptr(cameraFront));
+		glUniform1f(f_cutOff, glm::cos(glm::radians(12.5f)));
+		glUniform1f(f_outerCutOff, glm::cos(glm::radians(17.5f)));
+		glUniform3fv(f_viewPos, 1, glm::value_ptr(cameraPos));
+
 		glUniform3fv(f_lightColor, 1, glm::value_ptr(lightColor));
+		
+		glUniform1f(f_constant, 1.0f);
+		glUniform1f(f_linear, 0.09f);
+		glUniform1f(f_quadratic, 0.032f);
+		
 
 
 		glm::mat4 m, mn, v, p;
@@ -314,41 +354,49 @@ int main() {
 		// ref: http://glslsandbox.com/e#51487.0
 		// ref: http://www.songho.ca/opengl/gl_sphere.html
 		
-
-		// Model matrix
-		// m = glm::scale(m, glm::vec3(0.5, 0.5, 0.5));
-		m = glm::rotate(m, glm::radians((GLfloat)glfwGetTime() * 10.f), glm::vec3(1, 1, 0));
-		
-		mn = glm::transpose(glm::inverse(m));
-		glUniformMatrix4fv(v_m, 1, GL_FALSE, glm::value_ptr(m));
-		glUniformMatrix4fv(v_mnormal, 1, GL_FALSE, glm::value_ptr(mn));
+		// Projection matrix
+		p = glm::perspective(glm::radians(fov), (GLfloat)SCR_WIDTH / SCR_HEIGHT, .1f, 100.f);
+		glUniformMatrix4fv(v_p, 1, GL_FALSE, glm::value_ptr(p));
 
 		// View matrix
-		GLfloat r = 3.f;
+		/*GLfloat r = 3.f;
 		GLfloat camX = sin(glfwGetTime())*r;
 		GLfloat camY = sin(glfwGetTime())*r;
 		GLfloat camZ = cos(glfwGetTime())*r;
-		//v = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-		// v = glm::translate(v, glm::vec3(0.0f, 0.0f, -3.f));
+		v = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		v = glm::translate(v, glm::vec3(0.0f, 0.0f, -3.f));*/
 		v = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		glUniformMatrix4fv(v_v, 1, GL_FALSE, glm::value_ptr(v));
-		glm::vec3 camPos = glm::vec3(camX, r, camZ);
-		glUniform3fv(f_viewPos, 1, glm::value_ptr(camPos));
 
-		// Projection matrix
-		p = glm::perspective(glm::radians(fov), (GLfloat)SCR_WIDTH / SCR_HEIGHT, .1f, 100.f);
+		// Model matrix
+		// m = glm::scale(m, glm::vec3(0.5, 0.5, 0.5));
+		/*m = glm::rotate(m, glm::radians((GLfloat)glfwGetTime() * 10.f), glm::vec3(1, 1, 0));
 		
-		glUniformMatrix4fv(v_p, 1, GL_FALSE, glm::value_ptr(p));
+		mn = glm::transpose(glm::inverse(m));
+		glUniformMatrix4fv(v_m, 1, GL_FALSE, glm::value_ptr(m));
+		glUniformMatrix4fv(v_mnormal, 1, GL_FALSE, glm::value_ptr(mn));*/
 
-		glm::mat4 mvp = p * v*m;
-		glUniformMatrix4fv(v_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+		/*glm::mat4 mvp = p * v*m;
+		glUniformMatrix4fv(v_mvp, 1, GL_FALSE, glm::value_ptr(mvp));*/
 
-		//glDrawArrays(GL_TRIANGLE_STRIP, 0, plane.size());
-		for (int i = 0; i < va.size(); i += 3) {
-			glUniform1f(v_time, cos(glfwGetTime()/200)/2);
-			GLuint currentOffset = i * sizeof(GLuint);
-			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)currentOffset);
+		for (int objs = 0; objs < NUM_OBJS; objs++) {
+			
+			m = glm::mat4(1);
+			mn = glm::mat4(1);
+			m = glm::translate(m, obj_loc[objs]);
+			m = glm::rotate(m, glm::radians((GLfloat)glfwGetTime() * 10.f), glm::vec3(1, 1, 0));
+			m = glm::scale(m, glm::vec3(obj_scales[objs]));
+			mn = glm::transpose(glm::inverse(m));
+			glUniformMatrix4fv(v_m, 1, GL_FALSE, glm::value_ptr(m));
+			glUniformMatrix4fv(v_mnormal, 1, GL_FALSE, glm::value_ptr(mn));
+			glm::mat4 mvp = p * v*m;
+			glUniformMatrix4fv(v_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+			for (int i = 0; i < va.size(); i += 3) {
+				GLuint currentOffset = i * sizeof(GLuint);
+				glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)currentOffset);
+			}
 		}
+		
 		//glBindVertexArray(vao2);
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, obj.size());
 
@@ -374,9 +422,6 @@ int main() {
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window) {
-	float currentFrame = glfwGetTime();
-	deltaTime = currentFrame - lastFrame;
-	lastFrame = currentFrame;
 	float cameraSpeed = 2.5f * deltaTime; // adjust accordingly
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
