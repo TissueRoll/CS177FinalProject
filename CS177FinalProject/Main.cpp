@@ -306,7 +306,7 @@ int main() {
 		glGenBuffers(1, &vbo2);
 		glBindVertexArray(vao2);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo2);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 36, &LightBox[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 36, LightBox, GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
 	}
@@ -454,13 +454,13 @@ int main() {
 		}
 		
 		glUseProgram(lightbox_shaders);
-		glBindVertexArray(vao2);
 		m = glm::mat4(1);
-		m = glm::rotate(m, glm::radians((GLfloat)glfwGetTime() * 10.f), glm::vec3(1, 1, 0));
-		m = glm::scale(m, glm::vec3(0.5f, 0.5f, 0.5f));
+		m = glm::rotate(m, glm::radians((GLfloat)glfwGetTime() * 100.f), glm::vec3(0, 1, 0));
+		// m = glm::scale(m, glm::vec3(0.5f, 0.5f, 0.5f));
 		m = glm::translate(m, glm::vec3(2.0f,2.0f,2.0f));
 		glm::mat4 mvp = p * v*m;
-		glUniformMatrix4fv(v_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+		glUniformMatrix4fv(vlbs_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+		glBindVertexArray(vao2);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
