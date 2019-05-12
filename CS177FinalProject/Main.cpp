@@ -166,6 +166,52 @@ struct Icosphere {
 
 };
 
+const GLfloat lbs = 0.5f;
+
+glm::vec3 LightBox[] = {
+	glm::vec3(-lbs, -lbs, -lbs),
+	glm::vec3( lbs, -lbs, -lbs),
+	glm::vec3( lbs,  lbs, -lbs),
+	glm::vec3( lbs,  lbs, -lbs),
+	glm::vec3(-lbs,  lbs, -lbs),
+	glm::vec3(-lbs, -lbs, -lbs),
+
+	glm::vec3(-lbs, -lbs,  lbs),
+	glm::vec3(lbs, -lbs,  lbs),
+	glm::vec3(lbs,  lbs,  lbs),
+	glm::vec3(lbs,  lbs,  lbs),
+	glm::vec3(-lbs,  lbs,  lbs),
+	glm::vec3(-lbs, -lbs,  lbs),
+
+	glm::vec3(-lbs,  lbs,  lbs),
+	glm::vec3(-lbs,  lbs, -lbs),
+	glm::vec3(-lbs, -lbs, -lbs),
+	glm::vec3(-lbs, -lbs, -lbs),
+	glm::vec3(-lbs, -lbs,  lbs),
+	glm::vec3(-lbs,  lbs,  lbs),
+
+	glm::vec3(lbs,  lbs,  lbs),
+	glm::vec3(lbs,  lbs, -lbs),
+	glm::vec3(lbs, -lbs, -lbs),
+	glm::vec3(lbs, -lbs, -lbs),
+	glm::vec3(lbs, -lbs,  lbs),
+	glm::vec3(lbs,  lbs,  lbs),
+
+	glm::vec3(-lbs, -lbs, -lbs),
+	glm::vec3(lbs, -lbs, -lbs),
+	glm::vec3(lbs, -lbs,  lbs),
+	glm::vec3(lbs, -lbs,  lbs),
+	glm::vec3(-lbs, -lbs,  lbs),
+	glm::vec3(-lbs, -lbs, -lbs),
+
+	glm::vec3(-lbs,  lbs, -lbs),
+	glm::vec3(lbs,  lbs, -lbs),
+	glm::vec3(lbs,  lbs,  lbs),
+	glm::vec3(lbs,  lbs,  lbs),
+	glm::vec3(-lbs,  lbs,  lbs),
+	glm::vec3(-lbs,  lbs, -lbs)
+};
+
 // globals
 // cpd https://learnopengl.com/Getting-started/Camera
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -176,8 +222,8 @@ float lastFrame = 0.0f; // Time of last frame
 bool firstMouse = true;
 float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
 float pitch = 0.0f;
-float lastX = 800.0f / 2.0;
-float lastY = 600.0 / 2.0;
+float lastX = (float) SCR_WIDTH / 2.0;
+float lastY = (float) SCR_HEIGHT / 2.0;
 float fov = 45.0f;
 
 //auto plane = genPlane(glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(-.5, -.5, -1.f), 3);
@@ -226,6 +272,7 @@ int main() {
 	}
 
 	GLuint program = loadProgram("simple.vsh", "simple.fsh");
+	GLuint lightbox_shaders = loadProgram("lamp.vsh", "lamp.fsh");
 
 	Icosphere temp(0.1f,4,glm::vec3(0,0,0));
 	temp.generate_icosphere();
@@ -252,18 +299,18 @@ int main() {
 		glVertexAttribPointer(2, 4, GL_FLOAT, GL_TRUE, sizeof(Vertex), (void*)offsetof(Vertex, color));
 	}
 
-	/*
+	
 	GLuint vao2, vbo2;
 	{
 		glGenVertexArrays(1, &vao2);
 		glGenBuffers(1, &vbo2);
 		glBindVertexArray(vao2);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo2);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * obj.size(), obj.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 36, &LightBox[0], GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
 	}
-	*/
+	
 
 	// vsh
 	auto v_m = glGetUniformLocation(program, "m");
@@ -273,14 +320,16 @@ int main() {
 	auto v_mvp = glGetUniformLocation(program, "mvp");
 	// fsh
 	auto f_lightPos = glGetUniformLocation(program, "lightPos");
-	auto f_lightD = glGetUniformLocation(program, "lightD");
+	//auto f_lightD = glGetUniformLocation(program, "lightD");
 	auto f_viewPos = glGetUniformLocation(program, "viewPos");
 	auto f_lightColor = glGetUniformLocation(program, "lightColor");
 	auto f_constant = glGetUniformLocation(program, "constant");
 	auto f_linear = glGetUniformLocation(program, "linear");
 	auto f_quadratic = glGetUniformLocation(program, "quadratic");
-	auto f_cutOff = glGetUniformLocation(program, "cutOff");
-	auto f_outerCutOff = glGetUniformLocation(program, "outerCutOff");
+	//auto f_cutOff = glGetUniformLocation(program, "cutOff");
+	//auto f_outerCutOff = glGetUniformLocation(program, "outerCutOff");
+	// lamp
+	auto vlbs_mvp = glGetUniformLocation(lightbox_shaders, "mvp");
 
 	GLfloat obj_scales[NUM_OBJS] = {
 		1.0f, 0.5f, 2.0f, 0.35f, 0.69f,
@@ -320,16 +369,17 @@ int main() {
 		glUseProgram(program);
 		glBindVertexArray(vao);
 
+		// THIS DONT WORK PROPERLY
 
-		/*glm::vec3 lightPos = glm::vec3(1.f, 1.f, 1.f);
+		glm::vec3 lightPos = glm::vec3(1.f, 1.f, 1.f);
 		lightPos = glm::vec3(sin(glfwGetTime()), cos(glfwGetTime()), -sin(glfwGetTime())) * lightPos;
-		printf("light: %f, %f, %f\n", lightPos.x, lightPos.y, lightPos.z);*/
+		//printf("light: %f, %f, %f\n", lightPos.x, lightPos.y, lightPos.z);
 		glm::vec3 lightColor = glm::vec3(1.f, 1.f, 1.f);
-		glUniform3fv(f_lightPos, 1, glm::value_ptr(cameraPos));
-		glUniform3fv(f_lightD, 1, glm::value_ptr(cameraFront));
-		glUniform1f(f_cutOff, glm::cos(glm::radians(12.5f)));
-		glUniform1f(f_outerCutOff, glm::cos(glm::radians(17.5f)));
-		glUniform3fv(f_viewPos, 1, glm::value_ptr(cameraPos));
+		glUniform3fv(f_lightPos, 1, glm::value_ptr(lightPos));
+		//glUniform3fv(f_lightD, 1, glm::value_ptr(cameraFront));
+		//glUniform1f(f_cutOff, glm::cos(glm::radians(12.5f)));
+		//glUniform1f(f_outerCutOff, glm::cos(glm::radians(17.5f)));
+		
 
 		glUniform3fv(f_lightColor, 1, glm::value_ptr(lightColor));
 		
@@ -365,8 +415,14 @@ int main() {
 		GLfloat camZ = cos(glfwGetTime())*r;
 		v = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 		v = glm::translate(v, glm::vec3(0.0f, 0.0f, -3.f));*/
+		GLfloat r = 3.f;
+		GLfloat camX = sin(glfwGetTime())*r;
+		GLfloat camY = sin(glfwGetTime())*r;
+		GLfloat camZ = cos(glfwGetTime())*r;
 		v = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 		glUniformMatrix4fv(v_v, 1, GL_FALSE, glm::value_ptr(v));
+		glm::vec3 camPos = glm::vec3(camX, r, camZ);
+		glUniform3fv(f_viewPos, 1, glm::value_ptr(camPos));
 
 		// Model matrix
 		// m = glm::scale(m, glm::vec3(0.5, 0.5, 0.5));
@@ -397,8 +453,15 @@ int main() {
 			}
 		}
 		
-		//glBindVertexArray(vao2);
-		//glDrawArrays(GL_TRIANGLE_STRIP, 0, obj.size());
+		glUseProgram(lightbox_shaders);
+		glBindVertexArray(vao2);
+		m = glm::mat4(1);
+		m = glm::rotate(m, glm::radians((GLfloat)glfwGetTime() * 10.f), glm::vec3(1, 1, 0));
+		m = glm::scale(m, glm::vec3(0.5f, 0.5f, 0.5f));
+		m = glm::translate(m, glm::vec3(2.0f,2.0f,2.0f));
+		glm::mat4 mvp = p * v*m;
+		glUniformMatrix4fv(v_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
@@ -411,6 +474,9 @@ int main() {
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &ebo);
+	glDeleteProgram(lightbox_shaders);
+	glDeleteVertexArrays(1, &vao2);
+	glDeleteBuffers(1, &vbo2);
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------
