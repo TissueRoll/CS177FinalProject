@@ -23,18 +23,18 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="simple.fsh">
+    <None Include="lamp.fsh">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="lamp.fsh">
+    <None Include="sphere.fsh">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="simple.vsh">
+    <FxCompile Include="lamp.vsh">
       <Filter>Source Files</Filter>
     </FxCompile>
-    <FxCompile Include="lamp.vsh">
+    <FxCompile Include="sphere.vsh">
       <Filter>Source Files</Filter>
     </FxCompile>
   </ItemGroup>

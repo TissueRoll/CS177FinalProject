@@ -264,7 +264,7 @@ int main() {
 
 	// glfw window creation
 	// --------------------
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "CS177", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "CS177 Final Project", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -293,7 +293,7 @@ int main() {
 		glfwSwapInterval(1);
 	}
 
-	GLuint program = loadProgram("simple.vsh", "simple.fsh");
+	GLuint program = loadProgram("sphere.vsh", "sphere.fsh");
 	GLuint lightbox_shaders = loadProgram("lamp.vsh", "lamp.fsh");
 
 	Icosphere temp(0.1f,4,glm::vec3(0,0,0));
@@ -486,9 +486,9 @@ int main() {
 		}
 		
 		// update LightBoxPosition
-		pl[0].position.x = 1.0f + cos(glfwGetTime()) * 1.0f;
-		pl[0].position.y = 1.0f + sin(glfwGetTime()) * 1.0f;
-		pl[0].position.z = 1.0f + cos(glfwGetTime()) * 1.0f;
+		pl[0].position.x = 2.0f + cos(glfwGetTime()) * 2.0f;
+		pl[0].position.y = 2.0f + sin(glfwGetTime()) * 2.0f;
+		pl[0].position.z = -2.0f + cos(glfwGetTime()) * 2.0f;
 
 		glUniform3fv(f_pointLights0_position, 1, glm::value_ptr(pl[0].position));
 		glm::vec3 lightColor = glm::vec3(1.f, 1.f, 1.f);
