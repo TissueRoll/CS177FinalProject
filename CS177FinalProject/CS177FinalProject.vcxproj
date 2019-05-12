@@ -70,8 +70,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\Chris\Documents\OpenGL\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Chris\Documents\OpenGL\Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Chris Dizon\Documents\OpenGL\Include;C:\Users\Chris\Documents\OpenGL\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Chris Dizon\Documents\OpenGL\Libraries;C:\Users\Chris\Documents\OpenGL\Libraries;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>C:\Users\Chris Dizon\Documents\OpenGL\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Chris Dizon\Documents\OpenGL\Libraries;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -91,6 +95,9 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -121,7 +128,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\Documents\OpenGL\Source\glad.c" />
+    <ClCompile Include="glad.c" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
