@@ -1,5 +1,7 @@
 #version 330 core
-
+// 99% from https://learnopengl.com/code_viewer_gh.php?code=src/2.lighting/6.multiple_lights/6.multiple_lights.fs
+// in other words, not mine lol
+// modified to not have textures, and reverse the light direction in point light
 in vec3 f_pos;
 in vec3 f_normal;
 in vec4 f_color;

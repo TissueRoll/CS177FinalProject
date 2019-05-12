@@ -1,6 +1,5 @@
 #version 330 core
 
-#define AMPLITUDE 1.0
 #define PI 3.141592653589793238462643383279502
 
 layout(location = 0) in vec3 v_pos;
@@ -21,7 +20,6 @@ uniform mat4 mvp;
 // from https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
 // from https://gist.github.com/patriciogonzalezvivo/670c22f3966e662d2f83
 // from https://stackoverflow.com/questions/39292925/glsl-calculating-normal-on-a-sphere-mesh-in-vertex-shader-using-noise-function-b
-
 
 void main() {
 	f_color = v_color;

@@ -37,12 +37,6 @@ struct Vertex {
 	}
 };
 
-struct Material {
-	int diffuse;
-	int specular;
-	float shininess;
-};
-
 struct DirectionalLight {
 	glm::vec3 direction;
 	glm::vec3 ambient;
@@ -337,37 +331,39 @@ int main() {
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
 	}
-	
-	Material mat;
-	mat.diffuse = 0;
-	mat.specular = 1;
-	mat.shininess = 32.0f;
 
 	DirectionalLight world_light;
-	world_light.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
-	world_light.ambient = glm::vec3(0.0f, 0.0f, 0.0f);
-	world_light.diffuse = glm::vec3(0.4f, 0.4f, 0.4f);
-	world_light.specular = glm::vec3(0.5f, 0.5f, 0.5f);
+	{
+		world_light.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+		world_light.ambient = glm::vec3(0.0f, 0.0f, 0.0f);
+		world_light.diffuse = glm::vec3(0.4f, 0.4f, 0.4f);
+		world_light.specular = glm::vec3(0.5f, 0.5f, 0.5f);
+	}
+	
 
 	PointLight pl[1];
-	pl[0].position = glm::vec3(1.0f, 1.0f, 1.0f);
-	pl[0].ambient = glm::vec3(1.f, 1.f, 1.f);
-	pl[0].diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-	pl[0].specular = glm::vec3(1.f, 1.f, 1.f);
-	pl[0].constant = 1.0f;
-	pl[0].linear = 0.09f;
-	pl[0].quadratic = 0.032f;
+	{
+		pl[0].position = glm::vec3(1.0f, 1.0f, 1.0f);
+		pl[0].ambient = glm::vec3(1.f, 1.f, 1.f);
+		pl[0].diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+		pl[0].specular = glm::vec3(1.f, 1.f, 1.f);
+		pl[0].constant = 1.0f;
+		pl[0].linear = 0.09f;
+		pl[0].quadratic = 0.032f;
+	}
 
 	SpotLight flashlight;
-	flashlight.ambient = glm::vec3(0.3f, 0.3f, 0.3f);
-	flashlight.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
-	flashlight.specular = glm::vec3(0.5f, 0.5f, 0.5f);
-	flashlight.constant = 1.0f;
-	flashlight.linear = 0.09f;
-	flashlight.quadratic = 0.032f;
-	flashlight.cutOff = glm::cos(glm::radians(12.5f));
-	flashlight.outerCutOff = glm::cos(glm::radians(15.0f));
-
+	{
+		flashlight.ambient = glm::vec3(0.3f, 0.3f, 0.3f);
+		flashlight.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
+		flashlight.specular = glm::vec3(0.5f, 0.5f, 0.5f);
+		flashlight.constant = 1.0f;
+		flashlight.linear = 0.09f;
+		flashlight.quadratic = 0.032f;
+		flashlight.cutOff = glm::cos(glm::radians(12.5f));
+		flashlight.outerCutOff = glm::cos(glm::radians(15.0f));
+	}
+	
 	// vsh
 	auto v_m = glGetUniformLocation(program, "m");
 	auto v_mnormal = glGetUniformLocation(program, "mnormal");
@@ -463,39 +459,37 @@ int main() {
 		glUseProgram(program);
 		glBindVertexArray(vao);
 
-		// directional
-		glUniform3fv(f_dirLight_direction, 1, glm::value_ptr(world_light.direction));
-		glUniform3fv(f_dirLight_ambient, 1, glm::value_ptr(world_light.ambient));
-		glUniform3fv(f_dirLight_diffuse, 1, glm::value_ptr(world_light.diffuse));
-		glUniform3fv(f_dirLight_specular, 1, glm::value_ptr(world_light.specular));
-		// point light 1
-		glUniform3fv(f_pointLights0_ambient, 1, glm::value_ptr(pl[0].ambient));
-		glUniform3fv(f_pointLights0_diffuse, 1, glm::value_ptr(pl[0].diffuse));
-		glUniform3fv(f_pointLights0_specular, 1, glm::value_ptr(pl[0].specular));
-		glUniform1f(f_pointLights0_constant, pl[0].constant);
-		glUniform1f(f_pointLights0_linear, pl[0].linear);
-		glUniform1f(f_pointLights0_quadratic, pl[0].quadratic);
-		// spotlight
-		glUniform3fv(f_spotLight_ambient, 1, glm::value_ptr(flashlight.ambient));
-		glUniform3fv(f_spotLight_diffuse, 1, glm::value_ptr(flashlight.diffuse));
-		glUniform3fv(f_spotLight_specular, 1, glm::value_ptr(flashlight.specular));
-		glUniform1f(f_spotLight_constant, flashlight.constant);
-		glUniform1f(f_spotLight_linear, flashlight.linear);
-		glUniform1f(f_spotLight_quadratic, flashlight.quadratic);
-		glUniform1f(f_spotLight_cutOff, flashlight.cutOff);
-		glUniform1f(f_spotLight_outerCutOff, flashlight.outerCutOff);
+		// setting the crapton of uniforms
+		{
+			// directional
+			glUniform3fv(f_dirLight_direction, 1, glm::value_ptr(world_light.direction));
+			glUniform3fv(f_dirLight_ambient, 1, glm::value_ptr(world_light.ambient));
+			glUniform3fv(f_dirLight_diffuse, 1, glm::value_ptr(world_light.diffuse));
+			glUniform3fv(f_dirLight_specular, 1, glm::value_ptr(world_light.specular));
+			// point light 1
+			glUniform3fv(f_pointLights0_ambient, 1, glm::value_ptr(pl[0].ambient));
+			glUniform3fv(f_pointLights0_diffuse, 1, glm::value_ptr(pl[0].diffuse));
+			glUniform3fv(f_pointLights0_specular, 1, glm::value_ptr(pl[0].specular));
+			glUniform1f(f_pointLights0_constant, pl[0].constant);
+			glUniform1f(f_pointLights0_linear, pl[0].linear);
+			glUniform1f(f_pointLights0_quadratic, pl[0].quadratic);
+			// spotlight
+			glUniform3fv(f_spotLight_ambient, 1, glm::value_ptr(flashlight.ambient));
+			glUniform3fv(f_spotLight_diffuse, 1, glm::value_ptr(flashlight.diffuse));
+			glUniform3fv(f_spotLight_specular, 1, glm::value_ptr(flashlight.specular));
+			glUniform1f(f_spotLight_constant, flashlight.constant);
+			glUniform1f(f_spotLight_linear, flashlight.linear);
+			glUniform1f(f_spotLight_quadratic, flashlight.quadratic);
+			glUniform1f(f_spotLight_cutOff, flashlight.cutOff);
+			glUniform1f(f_spotLight_outerCutOff, flashlight.outerCutOff);
 
-		// THIS DONT WORK PROPERLY
-
+		}
+		
 		// update LightBoxPosition
 		pl[0].position.x = 1.0f + cos(glfwGetTime()) * 1.0f;
 		pl[0].position.y = 1.0f + sin(glfwGetTime()) * 1.0f;
 		pl[0].position.z = 1.0f + cos(glfwGetTime()) * 1.0f;
 
-		//glm::vec3 lightPos = glm::vec3(1.f, 1.f, 1.f);
-		//lightPos = glm::vec3(sin(glfwGetTime()), cos(glfwGetTime()), -sin(glfwGetTime())) * lightPos;
-		//printf("light: %f, %f, %f\n", lightPos.x, lightPos.y, lightPos.z);
-		
 		glUniform3fv(f_pointLights0_position, 1, glm::value_ptr(pl[0].position));
 		glm::vec3 lightColor = glm::vec3(1.f, 1.f, 1.f);
 		glUniform3fv(f_lightColor, 1, glm::value_ptr(lightColor));
@@ -503,37 +497,11 @@ int main() {
 		// Projection matrix
 		glUniformMatrix4fv(v_p, 1, GL_FALSE, glm::value_ptr(p));
 
-		// View matrix
-		/*GLfloat r = 3.f;
-		GLfloat camX = sin(glfwGetTime())*r;
-		GLfloat camY = sin(glfwGetTime())*r;
-		GLfloat camZ = cos(glfwGetTime())*r;
-		glm::vec3 camPos = glm::vec3(camX, r, camZ);
-		v = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-		v = glm::translate(v, glm::vec3(0.0f, 0.0f, -3.f));*/
-		
+		// View matrix		
 		glUniformMatrix4fv(v_v, 1, GL_FALSE, glm::value_ptr(v));
 		glUniform3fv(f_viewPos, 1, glm::value_ptr(cameraPos));
 		glUniform3fv(f_spotLight_position, 1, glm::value_ptr(cameraPos));
 		glUniform3fv(f_spotLight_direction, 1, glm::value_ptr(cameraFront));
-
-
-		//m = glm::mat4(1);
-		//mn = glm::mat3(1);
-
-		//m = glm::rotate(m, glm::radians((GLfloat)glfwGetTime() * 10.f), glm::vec3(1, 1, 0));
-		//m = glm::scale(m, glm::vec3(0.5f, 0.5f, 0.5f));
-		//mn = glm::mat3(glm::transpose(glm::inverse(m)));
-
-		//glUniformMatrix4fv(v_m, 1, GL_FALSE, glm::value_ptr(m));
-		//glUniformMatrix3fv(v_mnormal, 1, GL_FALSE, glm::value_ptr(mn));
-
-		//mvp = p * v * m;
-		//glUniformMatrix4fv(v_mvp, 1, GL_FALSE, glm::value_ptr(mvp));
-		//for (int i = 0; i < va.size(); i += 3) {
-		//	GLuint currentOffset = i * sizeof(GLuint);
-		//	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, (void*)currentOffset);
-		//}
 
 		// Model matrix
 		for (int objs = 0; objs < NUM_OBJS; objs++) {
