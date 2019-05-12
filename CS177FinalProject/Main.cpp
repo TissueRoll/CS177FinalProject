@@ -443,15 +443,13 @@ int main() {
 		v = glm::mat4(1);
 		p = glm::mat4(1);
 		mvp = glm::mat4(1);
-		// ref: http://glslsandbox.com/e#53359.0
-		// ref: http://glslsandbox.com/e#52629.0
-		// ref: http://glslsandbox.com/e#51856.0
-		// ref: http://glslsandbox.com/e#52629.0
-		// ref: http://glslsandbox.com/e#51856.0
-		// ref: http://glslsandbox.com/e#51718.0
-		// ref: http://glslsandbox.com/e#32913.1
-		// ref: http://glslsandbox.com/e#51487.0
-		// ref: http://www.songho.ca/opengl/gl_sphere.html
+		// ref: http://glslsandbox.com/e#53359.0 // cool reflective balls
+		// ref: http://glslsandbox.com/e#52629.0 // cool sphere blob thing
+		// ref: http://glslsandbox.com/e#51856.0 // sobrero nice to look at **
+		// ref: http://glslsandbox.com/e#51718.0 // unequal ripple up
+		// ref: http://glslsandbox.com/e#32913.1 // unequal ripple down
+		// ref: http://glslsandbox.com/e#51487.0 // slow ripple down
+		// ref: http://www.songho.ca/opengl/gl_sphere.html // very cool sphere generation thing
 
 		p = glm::perspective(glm::radians(fov), (GLfloat)SCR_WIDTH / SCR_HEIGHT, .1f, 100.f);
 		v = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
